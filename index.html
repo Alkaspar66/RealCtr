@@ -1,310 +1,144 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Менеджер проектов</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProjectManager PWA</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1976D2">
+
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      height: 100vh;
-      background: #f9f9f9;
-    }
-    .sidebar {
-      width: 240px;
-      background: #2c3e50;
-      color: white;
-      display: flex;
-      flex-direction: column;
-      padding: 20px;
-    }
-    .project-list {
-      flex: 1;
-      overflow-y: auto;
-    }
-    .project-item {
-      padding: 12px;
-      margin-bottom: 6px;
-      background: #34495e;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .project-item.active {
-      background: #3498db;
-      font-weight: bold;
-    }
-    .btn-create-project {
-      margin-top: 20px;
-      padding: 10px;
-      background: #27ae60;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .content {
-      flex: 1;
-      padding: 30px;
-      display: flex;
-      flex-direction: column;
-    }
-    .content-editor {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    .content-header {
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 20px;
-      color: #2c3e50;
-    }
-    .nav-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-      border-bottom: 1px solid #ddd;
-    }
-    .nav-btn {
-      padding: 10px 15px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 14px;
-      color: #555;
-    }
-    .nav-btn.active {
-      border-bottom: 2px solid #3498db;
-      font-weight: bold;
-      color: #2c3e50;
-    }
-    textarea {
-      flex: 1;
-      width: 100%;
-      padding: 15px;
-      font-size: 16px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      resize: none;
-      box-sizing: border-box;
-    }
-    .action-buttons {
-      display: flex;
-      gap: 10px;
-      margin-top: auto;
-      padding-top: 20px;
-      border-top: 1px solid #eee;
-    }
-    .action-btn {
-      padding: 8px 16px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .btn-save { background: #27ae60; color: white; }
-    .btn-cancel { background: #f39c12; color: black; }
-    .btn-delete-project { background: #e74c3c; color: white; }
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f7f7f7; }
+    h1 { color: #1976D2; }
+    textarea { width: 100%; height: 100px; margin-bottom: 10px; }
+    button { margin: 5px; padding: 10px 15px; background: #1976D2; color: white; border: none; cursor: pointer; }
+    button:hover { background: #1256a5; }
+    #projects { margin-top: 20px; }
+    .project { background: white; padding: 10px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
-  <div class="sidebar">
-    <h2>Мои проекты</h2>
-    <div class="project-list" id="project-list"></div>
-    <button class="btn-create-project" id="btn-create-project">+ Создать проект</button>
-  </div>
+  <h1>📂 Project Manager</h1>
 
-  <div class="content">
-    <div class="content-header" id="project-title">Загрузка...</div>
+  <h3>Add Project</h3>
+  <input id="projName" placeholder="Project name"><br>
+  <textarea id="projNotes" placeholder="Project notes..."></textarea><br>
+  <button onclick="addProject()">Add Project</button>
 
-    <div class="nav-buttons">
-      <button class="nav-btn active" data-section="start">🚦 Начать</button>
-      <button class="nav-btn" data-section="info">ℹ️ Инфо</button>
-      <button class="nav-btn" data-section="tasks">📋 Задачи</button>
-      <button class="nav-btn" data-section="ideas">💡 Идеи</button>
-      <button class="nav-btn" data-section="game">🎮 Игра</button>
-      <button class="nav-btn" data-section="role">🧑‍💼 Роль</button>
-      <button class="nav-btn" data-section="values">💎 Ценности</button>
-    </div>
+  <h3>Manage Data</h3>
+  <input type="file" id="importFile" style="display:none" onchange="importProjectsFromFile(this.files[0])">
+  <button onclick="document.getElementById('importFile').click()">Import JSON</button>
+  <button onclick="exportProjects()">Export JSON</button>
+  <button onclick="exportToGoogleSheets()">Export to Google Sheets</button>
+  <button onclick="importFromGoogleSheets()">Import from Google Sheets</button>
 
-    <div class="content-editor">
-      <textarea id="editor" placeholder=""></textarea>
-    </div>
-
-    <div class="action-buttons">
-      <button class="action-btn btn-save" id="btn-save">💾 Сохранить</button>
-      <button class="action-btn btn-cancel" id="btn-cancel">↩️ Отмена</button>
-      <button class="action-btn btn-delete-project" id="btn-delete-project">🗑 Удалить проект</button>
-    </div>
-  </div>
+  <h3>Projects</h3>
+  <div id="projects"></div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbytOuy3ujd3r2491dcXTK4D-JpKp_a4J61RnUw7WH5WmDVS2bfNL0zHt97YWGBjMyx-fA/exec";
+    // ---- LocalStorage ----
+    function saveProjects(projects) {
+      localStorage.setItem("projects", JSON.stringify(projects));
+    }
 
-    let allProjects = {};
-    let activeProject = null;
-    let currentSection = 'start';
+    function loadProjects() {
+      return JSON.parse(localStorage.getItem("projects") || "[]");
+    }
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      await loadAllData();
-      renderProjectList();
+    function addProject() {
+      const name = document.getElementById("projName").value.trim();
+      const notes = document.getElementById("projNotes").value.trim();
+      if (!name) return alert("Enter project name");
 
-      if (Object.keys(allProjects).length > 0) {
-        setActiveProject(Object.keys(allProjects)[0]);
-      } else {
-        activeProject = null;
-        document.getElementById('project-title').textContent = "Нет проектов";
-        document.getElementById('editor').value = "";
-      }
+      let projects = loadProjects();
+      projects.push({ name, notes });
+      saveProjects(projects);
 
-      setupEventListeners();
-    });
+      document.getElementById("projName").value = "";
+      document.getElementById("projNotes").value = "";
+      renderProjects();
+    }
 
-    async function loadAllData() {
-      const url = `${SCRIPT_URL}?action=get&project=all`;
-      const response = await fetch(url);
-      const rawData = await response.json();
-      allProjects = {};
-      if (!rawData || rawData.length === 0) return;
-
-      rawData.forEach(item => {
-        let data = item.data;
-
-        if (typeof data.start !== "string") data.start = "";
-        if (typeof data.info !== "string") data.info = "";
-        if (typeof data.tasks !== "string") data.tasks = "";
-        if (typeof data.ideas !== "string") data.ideas = "";
-        if (typeof data.game !== "string") data.game = "";
-        if (typeof data.role !== "string") data.role = "";
-        if (typeof data.values !== "string") data.values = "";
-
-        allProjects[item.project_name] = data;
+    function renderProjects() {
+      const container = document.getElementById("projects");
+      container.innerHTML = "";
+      const projects = loadProjects();
+      projects.forEach((p, i) => {
+        const div = document.createElement("div");
+        div.className = "project";
+        div.innerHTML = `<b>${p.name}</b><br>${p.notes || ""}<br>
+          <button onclick="deleteProject(${i})">Delete</button>`;
+        container.appendChild(div);
       });
     }
 
-    async function saveProject(projectName) {
-      const editor = document.getElementById('editor');
-      const currentText = editor.value.trim();
-
-      if (!activeProject) return;
-
-      if (currentSection === "start") {
-        allProjects[projectName].start = currentText;
-      } else {
-        const lines = currentText.split("\n").map(x => x.trim()).filter(x => x);
-        allProjects[projectName][currentSection] = lines.join("@@");
-      }
-
-      const dataJson = JSON.stringify(allProjects[projectName]);
-      const url = `${SCRIPT_URL}?action=save&project=${encodeURIComponent(projectName)}`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `data=${encodeURIComponent(dataJson)}`
-      });
-      const result = await response.json();
-      if (result.status === 'success') {
-        alert(`✅ Проект "${projectName}" сохранён!`);
-      }
+    function deleteProject(index) {
+      let projects = loadProjects();
+      projects.splice(index, 1);
+      saveProjects(projects);
+      renderProjects();
     }
 
-    function createNewProject(name) {
-      allProjects[name] = { start: '', info: '', tasks: '', ideas: '', game: '', role: '', values: '' };
-      renderProjectList();
-      setActiveProject(name);
+    // ---- Export/Import JSON ----
+    function exportProjects() {
+      const data = localStorage.getItem("projects") || "[]";
+      const blob = new Blob([data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "projects.json";
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
-    function renderProjectList() {
-      const list = document.getElementById('project-list');
-      list.innerHTML = '';
-
-      const names = Object.keys(allProjects);
-      if (names.length === 0) return;
-
-      names.forEach(name => {
-        const div = document.createElement('div');
-        div.textContent = name;
-        div.className = 'project-item';
-        if (name === activeProject) div.classList.add('active');
-        div.onclick = () => setActiveProject(name);
-        list.appendChild(div);
-      });
-    }
-
-    function setActiveProject(name) {
-      activeProject = name;
-      document.getElementById('project-title').textContent = name;
-      renderProjectList();
-      updateEditorContent();
-    }
-
-    function updateEditorContent() {
-      const project = allProjects[activeProject];
-      const editor = document.getElementById('editor');
-      if (!project) return;
-
-      let value = '';
-      if (currentSection === "start") {
-        value = project.start || '';
-      } else {
-        value = (project[currentSection] || '').split("@@").join("\n");
-      }
-      editor.value = value;
-    }
-
-    function setupEventListeners() {
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          if (activeProject) {
-            const editor = document.getElementById('editor');
-            const text = editor.value.trim();
-            if (currentSection === "start") {
-              allProjects[activeProject].start = text;
-            } else {
-              const lines = text.split("\n").map(x => x.trim()).filter(x => x);
-              allProjects[activeProject][currentSection] = lines.join("@@");
-            }
-          }
-
-          document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          currentSection = btn.dataset.section;
-          updateEditorContent();
-        });
-      });
-
-      document.getElementById('btn-save').addEventListener('click', () => {
-        if (!activeProject) return;
-        saveProject(activeProject);
-      });
-
-      document.getElementById('btn-create-project').addEventListener('click', () => {
-        const name = prompt("Введите название нового проекта:");
-        if (name && name.trim()) {
-          createNewProject(name.trim());
-        }
-      });
-
-      document.getElementById('btn-delete-project').addEventListener('click', () => {
-        if (!activeProject) return;
-        if (confirm(`Удалить проект "${activeProject}"?`)) {
-          delete allProjects[activeProject];
-          renderProjectList();
-          if (Object.keys(allProjects).length > 0) {
-            setActiveProject(Object.keys(allProjects)[0]);
+    function importProjectsFromFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            saveProjects(imported);
+            alert("Projects imported!");
+            renderProjects();
           } else {
-            createNewProject("Новый проект");
+            alert("Invalid JSON format.");
           }
+        } catch (err) {
+          alert("Error reading file: " + err);
         }
-      });
+      };
+      reader.readAsText(file);
+    }
 
-      document.getElementById('btn-cancel').addEventListener('click', () => {
-        updateEditorContent();
+    // ---- Google Sheets Sync ----
+    const SHEETS_URL = "PUT-YOUR-APPSCRIPT-WEBAPP-URL-HERE";
+
+    async function exportToGoogleSheets() {
+      if (!SHEETS_URL.startsWith("http")) return alert("Set SHEETS_URL first!");
+      const projects = loadProjects();
+      await fetch(SHEETS_URL, {
+        method: "POST",
+        body: JSON.stringify(projects),
+        headers: { "Content-Type": "application/json" }
       });
+      alert("Exported to Google Sheets!");
+    }
+
+    async function importFromGoogleSheets() {
+      if (!SHEETS_URL.startsWith("http")) return alert("Set SHEETS_URL first!");
+      const res = await fetch(SHEETS_URL);
+      const projects = await res.json();
+      saveProjects(projects);
+      renderProjects();
+      alert("Imported from Google Sheets!");
+    }
+
+    // ---- Init ----
+    renderProjects();
+
+    // ---- Service Worker registration ----
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
     }
   </script>
 </body>
