@@ -196,21 +196,24 @@ function addProject(name, iconDataUrl) {
 
   const cleanName = name.trim();
 
-  // создаём безопасный идентификатор (только латиница, цифры и подчеркивания)
-  const safeKey = transliterate(cleanName)
-    .replace(/[^a-zA-Z0-9_-]/g, "_") // заменяем любые недопустимые символы
+  // создаём базовый ключ (латиница + замена спецсимволов)
+  const baseKey = transliterate(cleanName)
+    .replace(/[^a-zA-Z0-9_-]/g, "_")
     .toLowerCase();
 
-  // проверка на дубликат по safeKey
-  const exists = projects.some(p => p.safeKey === safeKey);
+  // добавляем уникальный суффикс (время)
+  const safeKey = baseKey + "_" + Date.now();
+
+  // проверяем дубликат по оригинальному имени
+  const exists = projects.some(p => p.name.trim().toLowerCase() === cleanName.toLowerCase());
   if (exists) {
     alert("Проект с таким именем уже существует!");
     return;
   }
 
   projects.push({
-    name: cleanName,                // оригинальное имя (показываем пользователю)
-    safeKey: safeKey,               // безопасный идентификатор
+    name: cleanName,
+    safeKey,
     icon: iconDataUrl || "icons/icon-192.png",
     game: "",
     role: "",
@@ -222,9 +225,10 @@ function addProject(name, iconDataUrl) {
   saveProjects(projects);
   renderHome();
   toggleMenu();
+
+  console.log(`✅ Добавлен проект "${cleanName}" → safeKey: ${safeKey}`);
 }
 
-// Простая транслитерация кириллицы → латиницу
 function transliterate(str) {
   const map = {
     А:"A", а:"a", Б:"B", б:"b", В:"V", в:"v",
@@ -237,10 +241,9 @@ function transliterate(str) {
     Ф:"F", ф:"f", Х:"H", х:"h", Ц:"Ts", ц:"ts",
     Ч:"Ch", ч:"ch", Ш:"Sh", ш:"sh", Щ:"Sch", щ:"sch",
     Ы:"Y", ы:"y", Э:"E", э:"e", Ю:"Yu", ю:"yu",
-    Я:"Ya", я:"ya",
-    Ь:"y", ь:"y", // мягкий знак
-    Ъ:"y", ъ:"y"  // твёрдый знак
+    Я:"Ya", я:"ya", Ь:"y", ь:"y", Ъ:"y", ъ:"y"
   };
+
   return str.split("").map(ch => map[ch] || ch).join("");
 }
 
@@ -315,6 +318,7 @@ function transliterate(str) {
   </script>
 </body>
 </html>
+
 
 
 
