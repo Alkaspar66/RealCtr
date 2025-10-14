@@ -138,36 +138,52 @@
       menu.style.display = menu.style.display==="block" ? "none" : "block";
     }
 
-function newProject() {
+async function newProject() {
   const name = prompt("Название проекта?");
   if (!name) return;
 
-  // создаём выбор файла (галерея/файловая система)
   const input = document.createElement("input");
   input.type = "file";
   input.accept = "image/*";
 
-  input.onchange = (e) => {
+  input.onchange = async (e) => {
     const file = e.target.files[0];
     if (!file) {
-      // пользователь ничего не выбрал — ставим стандартную иконку
-      addProject(name, "icons/icon-192.png");
+      addProject(name, "icons/icon-192.png", "icon-192.png");
       return;
     }
 
-    // берём только имя файла (или путь, если доступен)
-    const iconPath = file.name; // можно сохранить file.name или URL.createObjectURL(file)
-    addProject(name, iconPath);
+    // используем File System Access API, если доступен
+    let iconPath = file.name;
+    try {
+      if ('showDirectoryPicker' in window) {
+        const dirHandle = await navigator.storage.getDirectory();
+        const iconsDir = await dirHandle.getDirectoryHandle("icons", { create: true });
+        const newFile = await iconsDir.getFileHandle(file.name, { create: true });
+        const writable = await newFile.createWritable();
+        await writable.write(await file.arrayBuffer());
+        await writable.close();
+        console.log("✅ Icon saved to app storage:", file.name);
+      } else {
+        console.warn("File System API not supported, fallback to temp URL");
+      }
+    } catch (err) {
+      console.warn("Cannot save icon file:", err);
+    }
+
+    const previewURL = URL.createObjectURL(file);
+    addProject(name, previewURL, iconPath);
   };
 
   input.click();
 }
 
-function addProject(name, icon) {
+function addProject(name, previewURL, iconPath) {
   let projects = loadProjects();
   projects.push({
     name,
-    icon, // просто путь или имя файла
+    icon: previewURL || "icons/icon-192.png", // для отображения
+    iconPath: iconPath || "icon-192.png",     // для хранения
     game: "",
     role: "",
     info: "",
@@ -249,6 +265,7 @@ function addProject(name, icon) {
   </script>
 </body>
 </html>
+
 
 
 
