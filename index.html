@@ -84,18 +84,29 @@
     }
 
     function renderHome() {
-      document.getElementById("home").style.display="block";
-      document.getElementById("project").style.display="none";
-      document.getElementById("projectsGrid").innerHTML="";
-      const projects = loadProjects();
-      projects.forEach((p,i)=>{
-        const div = document.createElement("div");
-        div.className="card";
-        div.innerHTML = `<img src="${p.icon||'icons/icon-192.png'}"><br>${p.name}`;
-        div.onclick=()=>openProject(i);
-        document.getElementById("projectsGrid").appendChild(div);
-      });
+  document.getElementById("home").style.display = "block";
+  document.getElementById("project").style.display = "none";
+  const grid = document.getElementById("projectsGrid");
+  grid.innerHTML = "";
+  const projects = loadProjects();
+
+  projects.forEach((p, i) => {
+    const div = document.createElement("div");
+    div.className = "card";
+
+    let imgSrc = p.icon || p.iconPath || "icons/icon-192.png";
+
+    // если путь без слэшей — добавим icons/
+    if (!imgSrc.includes("/") && !imgSrc.startsWith("blob:") && !imgSrc.startsWith("http")) {
+      imgSrc = "icons/" + imgSrc;
     }
+
+    div.innerHTML = `<img src="${imgSrc}" alt="icon"><br>${p.name}`;
+    div.onclick = () => openProject(i);
+    grid.appendChild(div);
+  });
+}
+
 
     function openProject(i){
       currentProjectIndex = i;
@@ -265,6 +276,7 @@ function addProject(name, previewURL, iconPath) {
   </script>
 </body>
 </html>
+
 
 
 
