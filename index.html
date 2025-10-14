@@ -41,7 +41,10 @@
 
   <!-- Project page -->
   <div id="project">
-    <h3 id="projectTitle"></h3>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <h3 id="projectTitle" contenteditable="false" style="margin:0;"></h3>
+      <button onclick="startRename()" id="renameBtn">✏️ Переименовать</button>
+    </div>
     <div class="tabs">
       <button onclick="openTab('game')">Игра</button>
       <button onclick="openTab('role')">Роль</button>
@@ -112,7 +115,10 @@
       currentProjectIndex = i;
       const p = loadProjects()[i];
       document.getElementById("headerTitle").innerText = p.name;
-      document.getElementById("projectTitle").innerText = p.name;
+      const title = document.getElementById("projectTitle");
+      title.innerText = p.name;
+      title.contentEditable = "false";
+      document.getElementById("renameBtn").innerText = "✏️ Переименовать";
       document.getElementById("home").style.display="none";
       document.getElementById("project").style.display="block";
       openTab("game");
@@ -149,7 +155,7 @@
       menu.style.display = menu.style.display==="block" ? "none" : "block";
     }
 
-    // --- Новый проект (только prompt, без file picker) ---
+    // --- Новый проект ---
     function newProject() {
       let name = prompt("Название проекта?");
       if (name === null) return;
@@ -176,7 +182,28 @@
       saveProjects(projects);
       renderHome();
       toggleMenu();
-      console.log(`✅ Добавлен проект "${name}" → safeKey: ${safeKey}`);
+    }
+
+    // --- Редактирование имени проекта ---
+    function startRename() {
+      const title = document.getElementById("projectTitle");
+      const btn = document.getElementById("renameBtn");
+      if (title.contentEditable === "true") {
+        // Завершить редактирование
+        title.contentEditable = "false";
+        btn.innerText = "✏️ Переименовать";
+        let projects = loadProjects();
+        projects[currentProjectIndex].name = title.innerText.trim() || "Без имени";
+        saveProjects(projects);
+        document.getElementById("headerTitle").innerText = title.innerText;
+        alert("Имя проекта обновлено!");
+      } else {
+        // Начать редактирование
+        title.contentEditable = "true";
+        btn.innerText = "💾 Сохранить";
+        title.focus();
+        document.execCommand("selectAll", false, null);
+      }
     }
 
     // --- Загрузка иконки ---
@@ -233,7 +260,7 @@
       reader.readAsText(file);
     }
 
-    // --- Google Sheets (по желанию) ---
+    // --- Google Sheets ---
     const SHEETS_URL = "https://script.google.com/macros/s/AKfycbytOuy3ujd3r2491dcXTK4D-JpKp_a4J61RnUw7WH5WmDVS2bfNL0zHt97YWGBjMyx-fA/exec";
 
     async function exportToGoogleSheets() {
