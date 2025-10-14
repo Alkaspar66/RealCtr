@@ -24,6 +24,9 @@
     #projectActions { margin-top:15px; }
     #projectActions button { margin:4px; padding:8px 12px; border:none; border-radius:4px; cursor:pointer; background:#1976D2; color:#fff; }
     #projectActions button:hover { background:#1256a5; }
+    #projectHeader { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    #projectHeader img { width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid #1976D2; }
+    #projectTitle { font-size:20px; margin:0; cursor:pointer; }
   </style>
 </head>
 <body>
@@ -41,10 +44,11 @@
 
   <!-- Project page -->
   <div id="project">
-    <div style="display:flex; align-items:center; gap:10px;">
-      <h3 id="projectTitle" contenteditable="false" style="margin:0;"></h3>
-      <button onclick="startRename()" id="renameBtn">✏️ Переименовать</button>
+    <div id="projectHeader">
+      <img id="projectAvatar" src="icons/icon-192.png" alt="icon">
+      <h3 id="projectTitle" ondblclick="renameProject()"></h3>
     </div>
+
     <div class="tabs">
       <button onclick="openTab('game')">Игра</button>
       <button onclick="openTab('role')">Роль</button>
@@ -115,10 +119,8 @@
       currentProjectIndex = i;
       const p = loadProjects()[i];
       document.getElementById("headerTitle").innerText = p.name;
-      const title = document.getElementById("projectTitle");
-      title.innerText = p.name;
-      title.contentEditable = "false";
-      document.getElementById("renameBtn").innerText = "✏️ Переименовать";
+      document.getElementById("projectTitle").innerText = p.name;
+      document.getElementById("projectAvatar").src = p.icon || "icons/icon-192.png";
       document.getElementById("home").style.display="none";
       document.getElementById("project").style.display="block";
       openTab("game");
@@ -185,24 +187,16 @@
     }
 
     // --- Редактирование имени проекта ---
-    function startRename() {
-      const title = document.getElementById("projectTitle");
-      const btn = document.getElementById("renameBtn");
-      if (title.contentEditable === "true") {
-        // Завершить редактирование
-        title.contentEditable = "false";
-        btn.innerText = "✏️ Переименовать";
-        let projects = loadProjects();
-        projects[currentProjectIndex].name = title.innerText.trim() || "Без имени";
+    function renameProject() {
+      const projects = loadProjects();
+      const current = projects[currentProjectIndex];
+      const newName = prompt("Новое имя проекта:", current.name);
+      if (newName && newName.trim() !== "") {
+        current.name = newName.trim();
         saveProjects(projects);
-        document.getElementById("headerTitle").innerText = title.innerText;
-        alert("Имя проекта обновлено!");
-      } else {
-        // Начать редактирование
-        title.contentEditable = "true";
-        btn.innerText = "💾 Сохранить";
-        title.focus();
-        document.execCommand("selectAll", false, null);
+        document.getElementById("projectTitle").innerText = current.name;
+        document.getElementById("headerTitle").innerText = current.name;
+        renderHome();
       }
     }
 
@@ -218,7 +212,6 @@
         let projects = loadProjects();
         projects[currentProjectIndex].icon = reader.result;
         saveProjects(projects);
-        alert("Иконка обновлена!");
         openProject(currentProjectIndex);
       };
       reader.readAsDataURL(file);
@@ -230,7 +223,6 @@
       let projects = loadProjects();
       projects.splice(currentProjectIndex, 1);
       saveProjects(projects);
-      alert("Проект удалён.");
       backHome();
     }
 
