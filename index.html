@@ -138,16 +138,50 @@
       menu.style.display = menu.style.display==="block" ? "none" : "block";
     }
 
-    function newProject(){
-      const name = prompt("Название проекта?");
-      if(!name) return;
-      const icon = prompt("URL/путь к иконке?", "icons/icon-192.png");
-      let projects = loadProjects();
-      projects.push({name, icon, game:"", role:"", info:"", ideas:"", tasks:""});
-      saveProjects(projects);
-      renderHome();
-      toggleMenu();
+    function newProject() {
+  const name = prompt("Название проекта?");
+  if (!name) return;
+
+  // создаем скрытый input для выбора файла
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*"; // только картинки
+
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) {
+      // если пользователь не выбрал картинку — ставим стандартную
+      const icon = "icons/icon-192.png";
+      addProject(name, icon);
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const iconData = reader.result; // base64 строка
+      addProject(name, iconData);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  input.click(); // открываем диалог выбора файла
+}
+
+function addProject(name, icon) {
+  let projects = loadProjects();
+  projects.push({
+    name,
+    icon,
+    game: "",
+    role: "",
+    info: "",
+    ideas: "",
+    tasks: ""
+  });
+  saveProjects(projects);
+  renderHome();
+  toggleMenu();
+}
 
     // ==== Export/Import JSON ====
     function exportProjects() {
@@ -219,4 +253,5 @@
   </script>
 </body>
 </html>
+
 
