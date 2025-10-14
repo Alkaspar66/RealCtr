@@ -188,19 +188,33 @@ function newProject() {
 
 function addProject(name, iconDataUrl) {
   let projects = loadProjects();
+
+  // проверяем, нет ли уже проекта с таким именем (регистр не важен)
+  const exists = projects.some(p => p.name.toLowerCase() === name.toLowerCase());
+  if (exists) {
+    alert("Проект с таким именем уже существует!");
+    return;
+  }
+
+  // защищаемся от проблем с Unicode
+  const safeName = name.trim();
+
   projects.push({
-    name,
-    icon: iconDataUrl || "icons/icon-192.png", // base64 или путь
+    name: safeName,
+    safeKey: encodeURIComponent(safeName), // безопасный идентификатор (можно для URL или Sheets)
+    icon: iconDataUrl || "icons/icon-192.png",
     game: "",
     role: "",
     info: "",
     ideas: "",
     tasks: ""
   });
+
   saveProjects(projects);
   renderHome();
   toggleMenu();
 }
+
 
     // ==== Export/Import JSON ====
     function exportProjects() {
@@ -272,6 +286,7 @@ function addProject(name, iconDataUrl) {
   </script>
 </body>
 </html>
+
 
 
 
