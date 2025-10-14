@@ -53,6 +53,7 @@
   <!-- Side menu -->
   <div id="menu">
     <h3>Меню</h3>
+    <button onclick="clearAllProjects()">Clear All Projects</button>
     <button onclick="newProject()">New Project</button>
     <button onclick="exportProjects()">Export JSON</button>
     <button onclick="document.getElementById('importFile').click()">Import JSON</button>
@@ -66,6 +67,13 @@
   <script>
     let currentProjectIndex = null;
     let currentTab = "game";
+
+    function clearAllProjects() {
+  if (confirm("Удалить все проекты?")) {
+    localStorage.clear();
+    renderHome();
+  }
+}
 
     function saveProjects(projects) {
       localStorage.setItem("projects", JSON.stringify(projects));
@@ -211,3 +219,4 @@
   </script>
 </body>
 </html>
+
