@@ -159,7 +159,7 @@
       menu.style.display = menu.style.display==="block" ? "none" : "block";
     }
 
-async function newProject() {
+function newProject() {
   const name = prompt("Название проекта?");
   if (!name) return;
 
@@ -167,44 +167,30 @@ async function newProject() {
   input.type = "file";
   input.accept = "image/*";
 
-  input.onchange = async (e) => {
+  input.onchange = (e) => {
     const file = e.target.files[0];
     if (!file) {
-      addProject(name, "icons/icon-192.png", "icon-192.png");
+      addProject(name, "icons/icon-192.png");
       return;
     }
 
-    // используем File System Access API, если доступен
-    let iconPath = file.name;
-    try {
-      if ('showDirectoryPicker' in window) {
-        const dirHandle = await navigator.storage.getDirectory();
-        const iconsDir = await dirHandle.getDirectoryHandle("icons", { create: true });
-        const newFile = await iconsDir.getFileHandle(file.name, { create: true });
-        const writable = await newFile.createWritable();
-        await writable.write(await file.arrayBuffer());
-        await writable.close();
-        console.log("✅ Icon saved to app storage:", file.name);
-      } else {
-        console.warn("File System API not supported, fallback to temp URL");
-      }
-    } catch (err) {
-      console.warn("Cannot save icon file:", err);
-    }
-
-    const previewURL = URL.createObjectURL(file);
-    addProject(name, previewURL, iconPath);
+    const reader = new FileReader();
+    reader.onload = () => {
+      // reader.result содержит data:image/png;base64,....
+      const base64Icon = reader.result;
+      addProject(name, base64Icon);
+    };
+    reader.readAsDataURL(file);
   };
 
   input.click();
 }
 
-function addProject(name, previewURL, iconPath) {
+function addProject(name, iconDataUrl) {
   let projects = loadProjects();
   projects.push({
     name,
-    icon: previewURL || "icons/icon-192.png", // для отображения
-    iconPath: iconPath || "icon-192.png",     // для хранения
+    icon: iconDataUrl || "icons/icon-192.png", // base64 или путь
     game: "",
     role: "",
     info: "",
@@ -286,6 +272,7 @@ function addProject(name, previewURL, iconPath) {
   </script>
 </body>
 </html>
+
 
 
 
