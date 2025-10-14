@@ -21,6 +21,11 @@
     #menu { display:none; position:fixed; top:0; right:0; width:220px; background:#fff; border-left:1px solid #ccc; height:100%; padding:10px; box-shadow:-2px 0 5px rgba(0,0,0,0.2); }
     #menu button { width:100%; margin:5px 0; padding:10px; background:#1976D2; color:#fff; border:none; border-radius:4px; cursor:pointer; }
     #menu button:hover { background:#1256a5; }
+    #projectButtons { margin-top:10px; display:flex; gap:10px; }
+    #projectButtons button { flex:1; padding:10px; border:none; border-radius:4px; cursor:pointer; }
+    #projectButtons button:first-child { background:#1976D2; color:white; }
+    #projectButtons button:last-child { background:#d32f2f; color:white; }
+    #projectButtons button:last-child:hover { background:#b71c1c; }
   </style>
 </head>
 <body>
@@ -47,7 +52,10 @@
       <button onclick="openTab('tasks')">Задачи</button>
     </div>
     <div id="tabContent"></div>
-    <button onclick="backHome()">← Назад</button>
+    <div id="projectButtons">
+      <button onclick="backHome()">← Назад</button>
+      <button onclick="deleteCurrentProject()">Удалить проект</button>
+    </div>
   </div>
 
   <!-- Side menu -->
@@ -69,11 +77,11 @@
     let currentTab = "game";
 
     function clearAllProjects() {
-  if (confirm("Удалить все проекты?")) {
-    localStorage.clear();
-    renderHome();
-  }
-}
+      if (confirm("Удалить все проекты?")) {
+        localStorage.clear();
+        renderHome();
+      }
+    }
 
     function saveProjects(projects) {
       localStorage.setItem("projects", JSON.stringify(projects));
@@ -84,152 +92,139 @@
     }
 
     function renderHome() {
-  document.getElementById("home").style.display = "block";
-  document.getElementById("project").style.display = "none";
-  const grid = document.getElementById("projectsGrid");
-  grid.innerHTML = "";
-  const projects = loadProjects();
+      document.getElementById("home").style.display = "block";
+      document.getElementById("project").style.display = "none";
+      const grid = document.getElementById("projectsGrid");
+      grid.innerHTML = "";
+      const projects = loadProjects();
 
-  projects.forEach((p, i) => {
-    const div = document.createElement("div");
-    div.className = "card";
-
-    // Выбираем, что рисовать
-    let imgSrc = "icons/icon-192.png"; // значение по умолчанию
-
-    if (p.iconPath) {
-      // Если путь указан, пробуем взять из папки icons/
-      if (p.iconPath.startsWith("http") || p.iconPath.startsWith("/")) {
-        imgSrc = p.iconPath; // абсолютный URL
-      } else {
-        imgSrc = "icons/" + p.iconPath; // относительный путь
-      }
-    } else if (p.icon && p.icon.startsWith("blob:")) {
-      // blob: устаревшие ссылки
-      imgSrc = "icons/icon-192.png";
-    } else if (p.icon) {
-      imgSrc = p.icon; // старые проекты
+      projects.forEach((p, i) => {
+        const div = document.createElement("div");
+        div.className = "card";
+        let imgSrc = p.icon || "icons/icon-192.png";
+        div.innerHTML = `<img src="${imgSrc}" alt="icon"><br>${p.name}`;
+        div.onclick = () => openProject(i);
+        grid.appendChild(div);
+      });
     }
 
-    div.innerHTML = `<img src="${imgSrc}" alt="icon"><br>${p.name}`;
-    div.onclick = () => openProject(i);
-    grid.appendChild(div);
-  });
-}
-
-
-    function openProject(i){
+    function openProject(i) {
       currentProjectIndex = i;
       const p = loadProjects()[i];
       document.getElementById("headerTitle").innerText = p.name;
       document.getElementById("projectTitle").innerText = p.name;
-      document.getElementById("home").style.display="none";
-      document.getElementById("project").style.display="block";
+      document.getElementById("home").style.display = "none";
+      document.getElementById("project").style.display = "block";
       openTab("game");
     }
 
-    function backHome(){
+    function backHome() {
       document.getElementById("headerTitle").innerText = "Project Manager";
       renderHome();
     }
 
-    function openTab(tab){
-      currentTab=tab;
+    function deleteCurrentProject() {
+      if (currentProjectIndex === null) return;
+      const projects = loadProjects();
+      const name = projects[currentProjectIndex].name;
+      if (confirm(`Удалить проект "${name}"?`)) {
+        projects.splice(currentProjectIndex, 1);
+        saveProjects(projects);
+        backHome();
+        alert(`Проект "${name}" удалён`);
+      }
+    }
+
+    function openTab(tab) {
+      currentTab = tab;
       const p = loadProjects()[currentProjectIndex];
       const content = document.getElementById("tabContent");
-      content.innerHTML = `<textarea id="tabArea">${p[tab]||""}</textarea>
+      content.innerHTML = `<textarea id="tabArea">${p[tab] || ""}</textarea>
       <br><button onclick="saveTab()">Сохранить</button>`;
-      document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
-      document.querySelectorAll(".tabs button").forEach(b=>{
-        if(b.innerText===tabNames[tab]) b.classList.add("active");
+      document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tabs button").forEach(b => {
+        if (b.innerText === tabNames[tab]) b.classList.add("active");
       });
     }
 
-    function saveTab(){
+    function saveTab() {
       let projects = loadProjects();
       projects[currentProjectIndex][currentTab] = document.getElementById("tabArea").value;
       saveProjects(projects);
       alert("Сохранено!");
     }
 
-    const tabNames = {game:"Игра", role:"Роль", info:"Инфо", ideas:"Идеи", tasks:"Задачи"};
+    const tabNames = { game: "Игра", role: "Роль", info: "Инфо", ideas: "Идеи", tasks: "Задачи" };
 
-    function toggleMenu(){
+    function toggleMenu() {
       const menu = document.getElementById("menu");
-      menu.style.display = menu.style.display==="block" ? "none" : "block";
+      menu.style.display = menu.style.display === "block" ? "none" : "block";
     }
 
-function newProject() {
-  const name = prompt("Название проекта?");
-  if (!name) return;
+    // === NEW PROJECT ===
+    function newProject() {
+      let name = prompt("Название проекта?");
+      if (name === null) {
+        console.log("⛔ Пользователь отменил создание проекта");
+        return;
+      }
 
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = "image/*";
+      if (name === "") {
+        const now = new Date();
+        const timestamp = now.toLocaleString("ru-RU").replace(",", "");
+        name = `Без имени — ${timestamp}`;
+      }
 
-  input.onchange = (e) => {
-    const file = e.target.files[0];
-    if (!file) {
-      addProject(name, "icons/icon-192.png");
-      return;
+      console.log("🟢 newProject() → name:", name);
+
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) {
+          console.log("📁 Файл не выбран — создаём проект без иконки");
+          addProject(name, "icons/icon-192.png");
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64Icon = reader.result;
+          console.log("🖼️ Иконка загружена:", file.name);
+          addProject(name, base64Icon);
+        };
+        reader.readAsDataURL(file);
+      };
+
+      input.click();
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      // reader.result содержит data:image/png;base64,....
-      const base64Icon = reader.result;
-      addProject(name, base64Icon);
-    };
-    reader.readAsDataURL(file);
-  };
+    function addProject(name, iconDataUrl) {
+      console.log("🟢 addProject() called with name:", name);
 
-  input.click();
-}
+      const projects = loadProjects();
+      const safeKey = "project_" + Date.now();
 
-function addProject(name, iconDataUrl) {
-  let projects = loadProjects();
-  if (!name || !name.trim()) {
-    alert("Введите корректное название проекта!");
-    return;
-  }
-  const cleanName = name.trim();
+      const newProject = {
+        name: name,
+        safeKey: safeKey,
+        icon: iconDataUrl || "icons/icon-192.png",
+        game: "",
+        role: "",
+        info: "",
+        ideas: "",
+        tasks: ""
+      };
 
-  // Уникальный ключ-идентификатор.
-  // Мы будем использовать только временную метку, чтобы не зависеть
-  // от кириллицы, пробелов и спецсимволов в имени при создании ключа.
-  // Это гарантирует уникальность и "безопасность" ключа.
-  const safeKey = 'project_' + Date.now();
-  // Если вам обязательно нужен транслитерированный префикс,
-  // можно использовать:
-  // const keyPrefix = transliterate(cleanName).replace(/\s/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toLowerCase().substring(0, 20);
-  // const safeKey = (keyPrefix || 'project') + '_' + Date.now();
+      projects.push(newProject);
+      saveProjects(projects);
+      renderHome();
+      toggleMenu();
 
-
-  // Проверяем дубликат по оригинальному имени
-  const exists = projects.some(p => p.name.trim().toLowerCase() === cleanName.toLowerCase());
-  if (exists) {
-    alert("Проект с таким именем уже существует!");
-    return;
-  }
-
-  projects.push({
-    name: cleanName, // Здесь сохраняется имя с кириллицей, пробелами и спецсимволами
-    safeKey,
-    icon: iconDataUrl || "icons/icon-192.png",
-    game: "",
-    role: "",
-    info: "",
-    ideas: "",
-    tasks: ""
-  });
-
-  saveProjects(projects);
-  renderHome();
-  toggleMenu();
-
-  console.log(`✅ Добавлен проект "${cleanName}" → safeKey: ${safeKey}`);
-}
-
+      console.log(`✅ Добавлен проект: "${name}" (${safeKey})`);
+    }
 
     // ==== Export/Import JSON ====
     function exportProjects() {
@@ -252,7 +247,7 @@ function addProject(name, iconDataUrl) {
             saveProjects(imported);
             renderHome();
           } else { alert("Invalid JSON format."); }
-        } catch (err) { alert("Error: "+err); }
+        } catch (err) { alert("Error: " + err); }
       };
       reader.readAsText(file);
     }
@@ -260,7 +255,6 @@ function addProject(name, iconDataUrl) {
     // ==== Google Sheets sync ====
     const SHEETS_URL = "https://script.google.com/macros/s/AKfycbytOuy3ujd3r2491dcXTK4D-JpKp_a4J61RnUw7WH5WmDVS2bfNL0zHt97YWGBjMyx-fA/exec";
 
-    // Export all local projects to Google Sheets
     async function exportToGoogleSheets() {
       if (!SHEETS_URL.startsWith("http")) return alert("Set SHEETS_URL first!");
       const projects = loadProjects();
@@ -274,7 +268,6 @@ function addProject(name, iconDataUrl) {
       alert("Экспортировано в Google Sheets!");
     }
 
-    // Import all projects from Google Sheets
     async function importFromGoogleSheets() {
       if (!SHEETS_URL.startsWith("http")) return alert("Set SHEETS_URL first!");
       const res = await fetch(SHEETS_URL + "?action=get&project=all");
@@ -301,17 +294,3 @@ function addProject(name, iconDataUrl) {
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
