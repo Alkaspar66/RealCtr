@@ -94,11 +94,21 @@
     const div = document.createElement("div");
     div.className = "card";
 
-    let imgSrc = p.icon || p.iconPath || "icons/icon-192.png";
+    // Выбираем, что рисовать
+    let imgSrc = "icons/icon-192.png"; // значение по умолчанию
 
-    // если путь без слэшей — добавим icons/
-    if (!imgSrc.includes("/") && !imgSrc.startsWith("blob:") && !imgSrc.startsWith("http")) {
-      imgSrc = "icons/" + imgSrc;
+    if (p.iconPath) {
+      // Если путь указан, пробуем взять из папки icons/
+      if (p.iconPath.startsWith("http") || p.iconPath.startsWith("/")) {
+        imgSrc = p.iconPath; // абсолютный URL
+      } else {
+        imgSrc = "icons/" + p.iconPath; // относительный путь
+      }
+    } else if (p.icon && p.icon.startsWith("blob:")) {
+      // blob: устаревшие ссылки
+      imgSrc = "icons/icon-192.png";
+    } else if (p.icon) {
+      imgSrc = p.icon; // старые проекты
     }
 
     div.innerHTML = `<img src="${imgSrc}" alt="icon"><br>${p.name}`;
@@ -276,6 +286,7 @@ function addProject(name, previewURL, iconPath) {
   </script>
 </body>
 </html>
+
 
 
 
