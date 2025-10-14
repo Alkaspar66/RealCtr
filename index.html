@@ -188,12 +188,10 @@ function newProject() {
 
 function addProject(name, iconDataUrl) {
   let projects = loadProjects();
-/*
   if (!name || !name.trim()) {
     alert("Введите корректное название проекта!");
     return;
   }
-*/
   const cleanName = name.trim();
 
   // Уникальный ключ-идентификатор.
@@ -303,6 +301,7 @@ function addProject(name, iconDataUrl) {
   </script>
 </body>
 </html>
+
 
 
 
