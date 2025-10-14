@@ -138,40 +138,36 @@
       menu.style.display = menu.style.display==="block" ? "none" : "block";
     }
 
-    function newProject() {
+function newProject() {
   const name = prompt("Название проекта?");
   if (!name) return;
 
-  // создаем скрытый input для выбора файла
+  // создаём выбор файла (галерея/файловая система)
   const input = document.createElement("input");
   input.type = "file";
-  input.accept = "image/*"; // только картинки
+  input.accept = "image/*";
 
   input.onchange = (e) => {
     const file = e.target.files[0];
     if (!file) {
-      // если пользователь не выбрал картинку — ставим стандартную
-      const icon = "icons/icon-192.png";
-      addProject(name, icon);
+      // пользователь ничего не выбрал — ставим стандартную иконку
+      addProject(name, "icons/icon-192.png");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const iconData = reader.result; // base64 строка
-      addProject(name, iconData);
-    };
-    reader.readAsDataURL(file);
+    // берём только имя файла (или путь, если доступен)
+    const iconPath = file.name; // можно сохранить file.name или URL.createObjectURL(file)
+    addProject(name, iconPath);
   };
 
-  input.click(); // открываем диалог выбора файла
+  input.click();
 }
 
 function addProject(name, icon) {
   let projects = loadProjects();
   projects.push({
     name,
-    icon,
+    icon, // просто путь или имя файла
     game: "",
     role: "",
     info: "",
@@ -253,5 +249,6 @@ function addProject(name, icon) {
   </script>
 </body>
 </html>
+
 
 
