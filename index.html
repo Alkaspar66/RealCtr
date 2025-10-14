@@ -189,19 +189,28 @@ function newProject() {
 function addProject(name, iconDataUrl) {
   let projects = loadProjects();
 
-  // проверяем, нет ли уже проекта с таким именем (регистр не важен)
-  const exists = projects.some(p => p.name.toLowerCase() === name.toLowerCase());
+  if (!name || !name.trim()) {
+    alert("Введите корректное название проекта!");
+    return;
+  }
+
+  const cleanName = name.trim();
+
+  // создаём безопасный идентификатор (только латиница, цифры и подчеркивания)
+  const safeKey = transliterate(cleanName)
+    .replace(/[^a-zA-Z0-9_-]/g, "_") // заменяем любые недопустимые символы
+    .toLowerCase();
+
+  // проверка на дубликат по safeKey
+  const exists = projects.some(p => p.safeKey === safeKey);
   if (exists) {
     alert("Проект с таким именем уже существует!");
     return;
   }
 
-  // защищаемся от проблем с Unicode
-  const safeName = name.trim();
-
   projects.push({
-    name: safeName,
-    safeKey: encodeURIComponent(safeName), // безопасный идентификатор (можно для URL или Sheets)
+    name: cleanName,                // оригинальное имя (показываем пользователю)
+    safeKey: safeKey,               // безопасный идентификатор
     icon: iconDataUrl || "icons/icon-192.png",
     game: "",
     role: "",
@@ -213,6 +222,19 @@ function addProject(name, iconDataUrl) {
   saveProjects(projects);
   renderHome();
   toggleMenu();
+}
+
+// Простая транслитерация кириллицы → латиницу
+function transliterate(str) {
+  const map = {
+    А: "A", а: "a", Б: "B", б: "b", В: "V", в: "v", Г: "G", г: "g", Д: "D", д: "d",
+    Е: "E", е: "e", Ё: "Yo", ё: "yo", Ж: "Zh", ж: "zh", З: "Z", з: "z", И: "I", и: "i",
+    Й: "J", й: "j", К: "K", к: "k", Л: "L", л: "l", М: "M", м: "m", Н: "N", н: "n",
+    О: "O", о: "o", П: "P", п: "p", Р: "R", р: "r", С: "S", с: "s", Т: "T", т: "t",
+    У: "U", у: "u", Ф: "F", ф: "f", Х: "H", х: "h", Ц: "Ts", ц: "ts", Ч: "Ch", ч: "ch",
+    Ш: "Sh", ш: "sh", Щ: "Sch", щ: "sch", Ы: "Y", ы: "y", Э: "E", э: "e", Ю: "Yu", ю: "yu", Я: "Ya", я: "ya"
+  };
+  return str.split("").map(ch => map[ch] || ch).join("");
 }
 
 
@@ -286,6 +308,7 @@ function addProject(name, iconDataUrl) {
   </script>
 </body>
 </html>
+
 
 
 
