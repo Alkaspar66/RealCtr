@@ -187,64 +187,49 @@ function newProject() {
 }
 
 function addProject(name, iconDataUrl) {
-  let projects = loadProjects();
+  let projects = loadProjects();
 
-  if (!name || !name.trim()) {
-    alert("Введите корректное название проекта!");
-    return;
-  }
+  if (!name || !name.trim()) {
+    alert("Введите корректное название проекта!");
+    return;
+  }
 
-  const cleanName = name.trim();
+  const cleanName = name.trim();
 
-  // создаём базовый ключ (латиница + замена спецсимволов)
-  const baseKey = transliterate(cleanName)
-    .replace(/[^a-zA-Z0-9_-]/g, "_")
-    .toLowerCase();
+  // Уникальный ключ-идентификатор.
+  // Мы будем использовать только временную метку, чтобы не зависеть
+  // от кириллицы, пробелов и спецсимволов в имени при создании ключа.
+  // Это гарантирует уникальность и "безопасность" ключа.
+  const safeKey = 'project_' + Date.now();
+  // Если вам обязательно нужен транслитерированный префикс,
+  // можно использовать:
+  // const keyPrefix = transliterate(cleanName).replace(/\s/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toLowerCase().substring(0, 20);
+  // const safeKey = (keyPrefix || 'project') + '_' + Date.now();
 
-  // добавляем уникальный суффикс (время)
-  const safeKey = baseKey + "_" + Date.now();
 
-  // проверяем дубликат по оригинальному имени
-  const exists = projects.some(p => p.name.trim().toLowerCase() === cleanName.toLowerCase());
-  if (exists) {
-    alert("Проект с таким именем уже существует!");
-    return;
-  }
+  // Проверяем дубликат по оригинальному имени
+  const exists = projects.some(p => p.name.trim().toLowerCase() === cleanName.toLowerCase());
+  if (exists) {
+    alert("Проект с таким именем уже существует!");
+    return;
+  }
 
-  projects.push({
-    name: cleanName,
-    safeKey,
-    icon: iconDataUrl || "icons/icon-192.png",
-    game: "",
-    role: "",
-    info: "",
-    ideas: "",
-    tasks: ""
-  });
+  projects.push({
+    name: cleanName, // Здесь сохраняется имя с кириллицей, пробелами и спецсимволами
+    safeKey,
+    icon: iconDataUrl || "icons/icon-192.png",
+    game: "",
+    role: "",
+    info: "",
+    ideas: "",
+    tasks: ""
+  });
 
-  saveProjects(projects);
-  renderHome();
-  toggleMenu();
+  saveProjects(projects);
+  renderHome();
+  toggleMenu();
 
-  console.log(`✅ Добавлен проект "${cleanName}" → safeKey: ${safeKey}`);
-}
-
-function transliterate(str) {
-  const map = {
-    А:"A", а:"a", Б:"B", б:"b", В:"V", в:"v",
-    Г:"G", г:"g", Д:"D", д:"d", Е:"E", е:"e",
-    Ё:"Yo", ё:"yo", Ж:"Zh", ж:"zh", З:"Z", з:"z",
-    И:"I", и:"i", Й:"J", й:"j", К:"K", к:"k",
-    Л:"L", л:"l", М:"M", м:"m", Н:"N", н:"n",
-    О:"O", о:"o", П:"P", п:"p", Р:"R", р:"r",
-    С:"S", с:"s", Т:"T", т:"t", У:"U", у:"u",
-    Ф:"F", ф:"f", Х:"H", х:"h", Ц:"Ts", ц:"ts",
-    Ч:"Ch", ч:"ch", Ш:"Sh", ш:"sh", Щ:"Sch", щ:"sch",
-    Ы:"Y", ы:"y", Э:"E", э:"e", Ю:"Yu", ю:"yu",
-    Я:"Ya", я:"ya", Ь:"y", ь:"y", Ъ:"y", ъ:"y"
-  };
-
-  return str.split("").map(ch => map[ch] || ch).join("");
+  console.log(`✅ Добавлен проект "${cleanName}" → safeKey: ${safeKey}`);
 }
 
 
@@ -318,6 +303,7 @@ function transliterate(str) {
   </script>
 </body>
 </html>
+
 
 
 
